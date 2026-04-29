@@ -5,8 +5,9 @@
 
 SmartSpend AI is a polished Flask web app that turns raw expense CSVs into clear financial insights, interactive charts, and shareable analysis snapshots.
 
-- Website 1: https://smartspend-ai-production.up.railway.app/
-- Website 2: https://smartspend-ai-6oiq.onrender.com/
+- Website 1: https://smart-spend-ai-two.vercel.app/
+- Website 2: https://smartspend-ai-production.up.railway.app/
+- Website 3: https://smartspend-ai-6oiq.onrender.com/
   
 It supports two modes:
 - **Flask mode (full app):** server-side analytics + SQLite persistence.
