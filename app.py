@@ -6,11 +6,13 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from flask import Flask, jsonify, render_template, request, send_file
+from flask import Flask, jsonify, redirect, render_template, request, send_file
 from sklearn.linear_model import LinearRegression
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, os.getenv("SMARTSPEND_DB", "smartspend.db"))
+if os.getenv("VERCEL") and not os.getenv("SMARTSPEND_DB"):
+    DB_PATH = os.path.join("/tmp", "smartspend.db")
 MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "8"))
 
 app = Flask(__name__)
@@ -181,6 +183,16 @@ def compute_analytics(df: pd.DataFrame, date_col: str, amount_col: str, category
 @app.get("/")
 def index():
     return render_template("index.html")
+
+
+@app.get("/favicon.svg")
+def favicon_svg():
+    return send_file(os.path.join(BASE_DIR, "public", "favicon.svg"), mimetype="image/svg+xml")
+
+
+@app.get("/favicon.ico")
+def favicon_ico():
+    return redirect("/favicon.svg", code=307)
 
 
 @app.get("/profile")

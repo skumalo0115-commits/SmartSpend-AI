@@ -1,0 +1,11 @@
+.git
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.db
+screenshots
+Images
+.pytest_cache
+.mypy_cache
+.ruff_cache
