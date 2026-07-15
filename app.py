@@ -1,6 +1,7 @@
 import json
 import os
 import sqlite3
+import requests
 from datetime import datetime
 from typing import Any
 
@@ -8,6 +9,9 @@ import numpy as np
 import pandas as pd
 from flask import Flask, jsonify, redirect, render_template, request, send_file
 from sklearn.linear_model import LinearRegression
+from dotenv import load_dotenv
+
+load_dotenv()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, os.getenv("SMARTSPEND_DB", "smartspend.db"))
@@ -18,6 +22,11 @@ MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "8"))
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "change-me")
 app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
+
+# OpenRouter Configuration
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini")
+OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 
 # -----------------------------
@@ -177,6 +186,70 @@ def compute_analytics(df: pd.DataFrame, date_col: str, amount_col: str, category
     }
 
 
+def get_ai_recommendations(analytics: dict[str, Any]) -> str:
+    """
+    Generate AI-powered spending recommendations using OpenRouter API.
+    """
+    if not OPENROUTER_API_KEY:
+        return "AI recommendations unavailable. Please configure OPENROUTER_API_KEY."
+
+    try:
+        # Prepare the prompt with analytics data
+        prompt = f"""
+Analyze this spending data and provide 3-4 specific, actionable recommendations on how to spend money smarter:
+
+Total Spending: R{analytics['total']}
+Average Transaction: R{analytics['average']}
+Predicted Next Month: R{analytics['prediction']}
+Anomalies Detected: {analytics['anomalies']}
+Highest Spend Category: {analytics['strongest_category']}
+Spending by Category: {dict(zip(analytics['categories'], analytics['category_totals']))}
+Fixed vs Variable: Fixed: R{analytics['expense_values'][0] if analytics['expense_values'] else 0}, Variable: R{analytics['expense_values'][1] if len(analytics['expense_values']) > 1 else 0}
+
+Provide:
+1. Category-specific optimization tips
+2. Savings opportunities
+3. Budget allocation suggestions
+4. Risk warnings if needed
+
+Keep recommendations concise, practical, and specific to their spending patterns.
+        """
+
+        headers = {
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "HTTP-Referer": "https://smartspend-ai.vercel.app",
+            "X-Title": "SmartSpend AI",
+            "Content-Type": "application/json",
+        }
+
+        payload = {
+            "model": OPENROUTER_MODEL,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.7,
+            "max_tokens": 500,
+        }
+
+        response = requests.post(
+            OPENROUTER_API_URL,
+            json=payload,
+            headers=headers,
+            timeout=30,
+        )
+
+        if response.status_code == 200:
+            data = response.json()
+            if "choices" in data and len(data["choices"]) > 0:
+                return data["choices"][0]["message"]["content"]
+            return "Unable to generate recommendations at this time."
+        else:
+            return f"API Error: {response.status_code}. Please check your API key."
+
+    except requests.exceptions.Timeout:
+        return "AI recommendation service timed out. Please try again."
+    except Exception as e:
+        return f"Error generating recommendations: {str(e)}"
+
+
 # -----------------------------
 # Pages + APIs
 # -----------------------------
@@ -283,6 +356,27 @@ def save_analysis():
     return ok({"status": "analysis_saved"}, 201)
 
 
+@app.post("/api/recommendations")
+def get_recommendations():
+    """API endpoint to get AI-powered spending recommendations."""
+    data = request.get_json(silent=True) or {}
+    
+    # Extract analytics data from request
+    analytics = {
+        "total": float(data.get("total", 0)),
+        "average": float(data.get("average", 0)),
+        "prediction": float(data.get("prediction", 0)),
+        "anomalies": int(data.get("anomalies", 0)),
+        "strongest_category": str(data.get("strongest_category", "General")),
+        "categories": data.get("categories", []),
+        "category_totals": data.get("category_totals", []),
+        "expense_values": data.get("expense_values", []),
+    }
+    
+    recommendations = get_ai_recommendations(analytics)
+    return ok({"recommendations": recommendations})
+
+
 @app.post("/upload")
 def upload():
     file = request.files.get("file")
@@ -309,6 +403,10 @@ def upload():
         analytics = compute_analytics(df, date_col, amount_col, category_col)
     except ValueError as exc:
         return err(str(exc))
+
+    # Get AI recommendations
+    ai_recommendations = get_ai_recommendations(analytics)
+    analytics["ai_recommendations"] = ai_recommendations
 
     return render_template("dashboard.html", **analytics)
 

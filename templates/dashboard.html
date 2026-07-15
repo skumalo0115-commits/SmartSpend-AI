@@ -42,21 +42,28 @@
     <ul id="insightsList">{% for insight in insights %}<li>{{ insight }}</li>{% endfor %}</ul>
   </section>
 
+  <section class="ai-recommendations-panel reveal-up" id="aiRecommendationsPanel">
+    <h3><i class="fa-solid fa-sparkles"></i> AI-Powered Spending Recommendations</h3>
+    <div id="recommendationsContent" class="recommendations-content">
+      {{ ai_recommendations }}
+    </div>
+  </section>
+
   <main class="dashboard">
     <div class="kpi reveal-left"><span>Total Balance</span><strong id="kpiTotal">R {{ total }}</strong></div>
     <div class="kpi reveal-right"><span>Total Profit</span><strong id="kpiAvg">R {{ average }}</strong></div>
     <div class="kpi reveal-left"><span>Pending Orders</span><strong id="kpiPrediction">R {{ prediction }}</strong></div>
     <div class="kpi danger reveal-right"><span>Active Assets</span><strong id="kpiAnomalies">{{ anomalies }}</strong></div>
 
-    <article class="chart reveal-left"><h4>Predictive Spending Trend</h4><p class="chart-note">This line shows if your spending is speeding up or calming down over time. If the line rises fast, spending is growing quickly. <span class="focus-hint">Double-tap or double-click to focus this chart.</span></p><canvas id="trendChart"></canvas></article>
-    <article class="chart reveal-right"><h4>Category Distribution</h4><p class="chart-note">This donut shows where most of your money goes by category. Bigger slices mean that category takes more of your budget. <span class="focus-hint">Double-tap or double-click to focus this chart.</span></p><canvas id="categoryChart"></canvas></article>
-    <article class="chart reveal-left"><h4>Monthly Comparison</h4><p class="chart-note">This bar chart compares month-by-month totals so you can spot expensive months and months where spending improved. <span class="focus-hint">Double-tap or double-click to focus this chart.</span></p><canvas id="monthlyBarChart"></canvas></article>
-    <article class="chart reveal-right"><h4>Transaction Scatter</h4><p class="chart-note">Each dot is one transaction. Dots far away from the cluster are unusual spends that may need a quick check. <span class="focus-hint">Double-tap or double-click to focus this chart.</span></p><canvas id="scatterChart"></canvas></article>
-    <article class="chart reveal-left"><h4>Cumulative Spend Curve</h4><p class="chart-note">This chart adds spending over time so you can see how fast your total costs are building up. <span class="focus-hint">Double-tap or double-click to focus this chart.</span></p><canvas id="cumulativeChart"></canvas></article>
-    <article class="chart reveal-right"><h4>Rolling Average Signal</h4><p class="chart-note">This smooth line removes short-term noise so you can see the real spending direction more clearly. <span class="focus-hint">Double-tap or double-click to focus this chart.</span></p><canvas id="rollingChart"></canvas></article>
-    <article class="chart reveal-left"><h4>Spending Velocity</h4><p class="chart-note">This shows how much spending changed from one point to the next, making sudden jumps easy to notice. <span class="focus-hint">Double-tap or double-click to focus this chart.</span></p><canvas id="velocityChart"></canvas></article>
-    <article class="chart reveal-right"><h4>Volatility Radar</h4><p class="chart-note">This radar highlights categories with unstable spending. Bigger spikes mean that category changes a lot and is less predictable. <span class="focus-hint">Double-tap or double-click to focus this chart.</span></p><canvas id="volatilityChart"></canvas></article>
-    <article class="chart reveal-up"><h4>Fixed vs Variable Split</h4><p class="chart-note">This split compares fixed costs (like bills) vs flexible costs (like optional spending) so you can see how much is controllable. <span class="focus-hint">Double-tap or double-click to focus this chart.</span></p><canvas id="expenseTypeChart"></canvas></article>
+    <article class="chart reveal-left"><h4>Predictive Spending Trend</h4><p class="chart-note">This line shows if your spending is speeding up or calming down over time. If the line rises fast, spending is accelerating.</p><canvas id="trendChart"></canvas></article>
+    <article class="chart reveal-right"><h4>Category Distribution</h4><p class="chart-note">This donut shows where most of your money goes by category. Bigger slices mean that category takes more of your budget.</p><canvas id="categoryChart"></canvas></article>
+    <article class="chart reveal-left"><h4>Monthly Comparison</h4><p class="chart-note">This bar chart compares month-by-month totals so you can spot expensive months and months where spending improved.</p><canvas id="monthlyChart"></canvas></article>
+    <article class="chart reveal-right"><h4>Transaction Scatter</h4><p class="chart-note">Each dot is one transaction. Dots far away from the cluster are unusual spends that may need a quick check.</p><canvas id="scatterChart"></canvas></article>
+    <article class="chart reveal-left"><h4>Cumulative Spend Curve</h4><p class="chart-note">This chart adds spending over time so you can see how fast your total costs are building up. <span class="hint-text">Steeper = faster spending</span></p><canvas id="cumulativeChart"></canvas></article>
+    <article class="chart reveal-right"><h4>Rolling Average Signal</h4><p class="chart-note">This smooth line removes short-term noise so you can see the real spending direction more clearly. <span class="hint-text">Upward trend = more spending</span></p><canvas id="rollingChart"></canvas></article>
+    <article class="chart reveal-left"><h4>Spending Velocity</h4><p class="chart-note">This shows how much spending changed from one point to the next, making sudden jumps easy to notice. <span class="hint-text">Green = less spending, Red = more spending</span></p><canvas id="velocityChart"></canvas></article>
+    <article class="chart reveal-right"><h4>Volatility Radar</h4><p class="chart-note">This radar highlights categories with unstable spending. Bigger spikes mean that category changes a lot and is harder to predict.</p><canvas id="volatilityChart"></canvas></article>
+    <article class="chart reveal-up"><h4>Fixed vs Variable Split</h4><p class="chart-note">This split compares fixed costs (like bills) vs flexible costs (like optional spending) so you can see how much flexibility you have.</p><canvas id="expenseChart"></canvas></article>
   </main>
 
   <div class="snapshot-permission-modal hidden" id="snapshotPermissionModal" role="dialog" aria-modal="true" aria-labelledby="snapshotPermissionTitle">
@@ -106,6 +113,7 @@
     window.__JINJA_EXPENSE_LABELS__ = '{{ expense_labels | tojson }}';
     window.__JINJA_EXPENSE_VALUES__ = '{{ expense_values | tojson }}';
     window.__JINJA_INSIGHTS__ = '{{ insights | tojson }}';
+    window.__JINJA_AI_RECOMMENDATIONS__ = '{{ ai_recommendations | tojson }}';
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script defer src="/static/js/app.js"></script>

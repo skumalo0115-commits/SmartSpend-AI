@@ -1,0 +1,63 @@
+.ai-recommendations-panel {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 24px auto;
+  max-width: 1200px;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);
+}
+
+.ai-recommendations-panel h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.ai-recommendations-panel h3 i {
+  color: #6366f1;
+  font-size: 20px;
+}
+
+.recommendations-content {
+  color: var(--text-secondary);
+  line-height: 1.6;
+  font-size: 14px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  background: var(--bg-secondary);
+  padding: 16px;
+  border-radius: 8px;
+  border-left: 4px solid #6366f1;
+}
+
+.recommendations-content strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .ai-recommendations-panel {
+    margin: 16px;
+    padding: 16px;
+  }
+
+  .recommendations-content {
+    font-size: 13px;
+    padding: 12px;
+  }
+}
+
+/* Dark mode specific */
+:root[data-theme="dark"] .ai-recommendations-panel {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+}
+
+/* Light mode specific */
+:root[data-theme="light"] .ai-recommendations-panel {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
+}
