@@ -99,10 +99,13 @@ document.addEventListener("DOMContentLoaded", () => {
     new Chart(document.getElementById("expenseChart"), { type: "doughnut", data: { labels: data.expenseLabels, datasets: [{ data: data.expenseValues, backgroundColor: ["#355adf", "#22c55e"] }] }, options: { responsive: true, maintainAspectRatio: false } });
   }
 
+  // KPIs ("money" cards) must be visible immediately; charts use IntersectionObserver reveal.
+  document.querySelectorAll(".kpi.kpi-stat").forEach((el) => el.classList.add("visible"));
+
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => entry.isIntersecting && entry.target.classList.add("visible"));
   }, { threshold: 0.15 });
-  document.querySelectorAll(".kpi,.chart").forEach((el) => observer.observe(el));
+  document.querySelectorAll(".chart").forEach((el) => observer.observe(el));
 
   const dashboard = document.querySelector(".dashboard");
   const backdrop = document.createElement("div");
