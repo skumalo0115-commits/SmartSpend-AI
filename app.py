@@ -27,6 +27,9 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini")
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
+def money(value):
+    return f"R{float(value or 0):,.2f}"
+
 def db_conn():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -79,7 +82,7 @@ def compute_analytics(df, date_col, amount_col, category_col):
         model = LinearRegression()
         x_axis = np.arange(len(monthly_values)).reshape(-1, 1)
         model.fit(x_axis, monthly_values)
-        prediction = round(float(model.predict([[len(monthly_values)]])[0]), 2)
+        prediction = round(max(0, float(model.predict([[len(monthly_values)]])[0])), 2)
 
     category_totals = df.groupby("normalized_category")[amount_col].sum().sort_values(ascending=False)
     df["cumulative"] = df[amount_col].cumsum()
@@ -100,9 +103,100 @@ def compute_analytics(df, date_col, amount_col, category_col):
 
     return {"total": total, "average": average, "prediction": prediction, "anomalies": anomalies, "strongest_category": strongest_category, "insights": insight_items, "months": months, "monthly": monthly_values, "categories": category_totals.index.tolist(), "category_totals": category_totals.round(2).tolist(), "dates": df[date_col].dt.strftime("%Y-%m-%d").tolist(), "cumulative": df["cumulative"].round(2).tolist(), "rolling": df["rolling_avg"].round(2).tolist(), "velocity": df["velocity"].round(2).tolist(), "volatility_labels": volatility.index.tolist(), "volatility_values": volatility.round(2).tolist(), "expense_labels": expense_split.index.tolist(), "expense_values": expense_split.round(2).tolist(), "amounts": df[amount_col].round(2).tolist()}
 
+def build_dashboard_analysis(analytics, source="SmartSpend"):
+    categories = list(zip(analytics.get("categories", []), analytics.get("category_totals", [])))
+    top_category, top_amount = categories[0] if categories else ("General", 0)
+    monthly_values = analytics.get("monthly", [])
+    total = float(analytics.get("total", 0) or 0)
+    average = float(analytics.get("average", 0) or 0)
+    prediction = float(analytics.get("prediction", 0) or 0)
+    anomalies = int(analytics.get("anomalies", 0) or 0)
+    last_month = float(monthly_values[-1]) if monthly_values else 0
+    previous_month = float(monthly_values[-2]) if len(monthly_values) > 1 else last_month
+    month_change = last_month - previous_month
+    month_change_pct = (month_change / previous_month * 100) if previous_month else 0
+    category_share = (float(top_amount) / total * 100) if total else 0
+    variable_total = sum(
+        float(value)
+        for label, value in zip(analytics.get("expense_labels", []), analytics.get("expense_values", []))
+        if str(label).lower() == "variable"
+    )
+    fixed_total = sum(
+        float(value)
+        for label, value in zip(analytics.get("expense_labels", []), analytics.get("expense_values", []))
+        if str(label).lower() == "fixed"
+    )
+    savings_target = round(max(variable_total * 0.1, total * 0.05), 2) if total else 0
+    projected_change = prediction - last_month if prediction and last_month else 0
+    trend_word = "higher" if projected_change > 0 else ("lower" if projected_change < 0 else "similar")
+    movement_word = "up" if month_change > 0 else ("down" if month_change < 0 else "flat")
+    volatile_pairs = sorted(
+        zip(analytics.get("volatility_labels", []), analytics.get("volatility_values", [])),
+        key=lambda item: float(item[1] or 0),
+        reverse=True,
+    )
+    volatile_category = volatile_pairs[0][0] if volatile_pairs else top_category
+
+    return {
+        "source": source,
+        "kpi_descriptions": {
+            "total": f"You spent {money(total)} across the uploaded CSV period, so this is the baseline to reduce from.",
+            "average": f"Each transaction averages {money(average)}, which shows how quickly individual purchases add up.",
+            "prediction": f"Next month is projected at {money(prediction)}, trending {trend_word} than the latest month.",
+            "anomalies": f"{anomalies} transaction(s) sit unusually high and deserve a quick review before budgeting.",
+        },
+        "chart_descriptions": {
+            "trend": f"Monthly spend is {movement_word} by {money(abs(month_change))} ({abs(month_change_pct):.1f}%) compared with the previous month.",
+            "category": f"{top_category} is the largest category at {money(top_amount)}, about {category_share:.1f}% of total spend.",
+            "monthly": "Use the tallest month as the budget pressure point and compare future uploads against it.",
+            "scatter": "The transaction spread separates everyday purchases from high-value outliers that need attention.",
+            "cumulative": f"Total spend accumulated to {money(total)}, so savings improvements need to happen early in the month.",
+            "rolling": "The rolling average smooths noisy transactions so the real spending direction is easier to read.",
+            "velocity": "Large jumps in velocity show dates where spending pace changed sharply.",
+            "volatility": f"{volatile_category} has the most unpredictable spend pattern in this CSV.",
+            "fixed_variable": f"Fixed spend is {money(fixed_total)} and variable spend is {money(variable_total)}, so variable spend is the main savings lever.",
+        },
+        "kpi_labels": {
+            "total": "Total Expenses",
+            "average": "Avg Transaction",
+            "prediction": "Next Month Est.",
+            "anomalies": "Unusual Spends",
+        },
+        "spending_insights": [
+            {
+                "title": "Largest Spending Driver",
+                "finding": f"{top_category} takes the biggest share of the uploaded spending at {money(top_amount)}.",
+                "implication": f"Set a cap for {top_category} first because a small reduction there has the biggest impact.",
+            },
+            {
+                "title": "Savings Opportunity",
+                "finding": f"A realistic first savings target is about {money(savings_target)} from flexible expenses.",
+                "implication": "Move that amount to savings at the start of the month, then spend against the remaining budget.",
+            },
+        ],
+        "recommendations": [
+            {
+                "priority": "HIGH",
+                "action": f"Reduce {top_category} by 10% next month.",
+                "impact": f"Estimated improvement: {money(float(top_amount) * 0.1)} kept available.",
+            },
+            {
+                "priority": "MEDIUM",
+                "action": "Review every unusual transaction before the next budget cycle.",
+                "impact": f"Potentially prevents repeat spikes across {anomalies} flagged transaction(s).",
+            },
+            {
+                "priority": "LOW",
+                "action": f"Create an automatic savings transfer of {money(savings_target)}.",
+                "impact": "Turns the CSV insight into money kept before discretionary spending starts.",
+            },
+        ],
+        "executive_summary": f"SmartSpend read the uploaded CSV and found {money(total)} in spending, led by {top_category}. The next-month estimate is {money(prediction)}, so the clearest way to keep more money available is to reduce flexible spending by about {money(savings_target)} and review the flagged outliers.",
+    }
+
 def get_ai_dashboard_analysis(analytics):
     if not OPENROUTER_API_KEY:
-        return {"error": "API not configured"}
+        return build_dashboard_analysis(analytics, source="Local CSV analysis")
 
     try:
         category_data = dict(zip(analytics['categories'], analytics['category_totals']))
@@ -130,7 +224,9 @@ def get_ai_dashboard_analysis(analytics):
         volatile_str = ', '.join(high_vol) if high_vol else 'All categories stable'
         monthly_str = ' -> '.join([f"R{v:.0f}" for v in monthly_values[-4:]])
 
-        prompt = f"""Generate comprehensive AI dashboard analysis for spending data. Return ONLY valid JSON, no additional text.
+        deterministic_analysis = build_dashboard_analysis(analytics)
+
+        prompt = f"""Generate comprehensive AI dashboard analysis for spending data from a user's uploaded CSV. Return ONLY valid JSON, no markdown and no additional text.
 
 DATA SUMMARY:
 - Total Spent: R{total}
@@ -140,6 +236,15 @@ DATA SUMMARY:
 - Trend: {trend_direction}
 - Categories: {category_str}
 - Fixed vs Variable: {fixed_pct:.0f}% fixed, {variable_pct:.0f}% variable
+- Recent Months: {monthly_str}
+- Most Volatile Categories: {volatile_str}
+
+REQUIREMENTS:
+- Base every statement on the CSV summary above.
+- Give practical saving and spending recommendations that help the user keep more money available.
+- Include rand amounts where possible.
+- Do not invent income, debt, account balances, or transactions not shown in the data.
+- Keep each sentence concise enough to fit dashboard cards.
 
 RETURN THIS EXACT JSON STRUCTURE:
 {{
@@ -198,7 +303,7 @@ RETURN THIS EXACT JSON STRUCTURE:
         payload = {
             "model": OPENROUTER_MODEL,
             "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.7,
+            "temperature": 0.2,
             "max_tokens": 3000,
         }
 
@@ -210,17 +315,17 @@ RETURN THIS EXACT JSON STRUCTURE:
                 content = data["choices"][0]["message"]["content"]
                 try:
                     analysis = json.loads(content)
-                    return analysis
+                    return {**deterministic_analysis, **analysis, "source": "OpenRouter AI + CSV analysis"}
                 except json.JSONDecodeError:
-                    return {"error": "Invalid JSON response"}
-            return {"error": "No response from AI"}
+                    return deterministic_analysis
+            return deterministic_analysis
         else:
-            return {"error": f"API error {response.status_code}"}
+            return deterministic_analysis
 
     except requests.exceptions.Timeout:
-        return {"error": "Request timeout"}
+        return build_dashboard_analysis(analytics, source="Local CSV analysis")
     except Exception as e:
-        return {"error": str(e)}
+        return build_dashboard_analysis(analytics, source="Local CSV analysis")
 
 @app.get("/")
 def index():

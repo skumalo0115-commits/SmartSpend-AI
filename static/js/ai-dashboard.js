@@ -2,6 +2,13 @@ document.addEventListener('DOMContentLoaded', function() {
   const rawAnalysis = window.__JINJA_AI_ANALYSIS__;
   if (!rawAnalysis) return;
 
+  const escapeHTML = (value) => String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+
   let analysis;
   try {
     analysis = typeof rawAnalysis === 'string' ? JSON.parse(rawAnalysis) : rawAnalysis;
@@ -70,6 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (summaryElem && summarySection) {
       summaryElem.textContent = analysis.executive_summary;
       summarySection.style.display = 'block';
+      document.body.classList.add('has-ai-summary');
     }
   }
 
@@ -84,9 +92,9 @@ document.addEventListener('DOMContentLoaded', function() {
       analysis.spending_insights.forEach(insight => {
         html += `
           <div class="rec-insight-card">
-            <div class="rec-insight-title">📊 ${insight.title}</div>
-            <div class="rec-insight-text">${insight.finding}</div>
-            <div class="rec-insight-implication">💡 ${insight.implication}</div>
+            <div class="rec-insight-title"><i class="fa-solid fa-chart-line"></i> ${escapeHTML(insight.title)}</div>
+            <div class="rec-insight-text">${escapeHTML(insight.finding)}</div>
+            <div class="rec-insight-implication"><i class="fa-solid fa-lightbulb"></i> ${escapeHTML(insight.implication)}</div>
           </div>
         `;
       });
@@ -94,12 +102,13 @@ document.addEventListener('DOMContentLoaded', function() {
       if (analysis.recommendations && analysis.recommendations.length > 0) {
         html += '<div class="rec-section-header">Recommended Actions</div>';
         analysis.recommendations.forEach(rec => {
-          const priorityClass = `rec-action-priority-${rec.priority.toLowerCase()}`;
+          const priority = escapeHTML(rec.priority || 'MEDIUM');
+          const priorityClass = `rec-action-priority-${String(rec.priority || 'medium').toLowerCase()}`;
           html += `
             <div class="rec-action-item">
-              <span class="rec-action-priority ${priorityClass}">${rec.priority} Priority</span>
-              <div class="rec-action-category">🎯 ${rec.action}</div>
-              <div class="rec-action-description">💰 Impact: ${rec.impact}</div>
+              <span class="rec-action-priority ${priorityClass}">${priority} Priority</span>
+              <div class="rec-action-category"><i class="fa-solid fa-bullseye"></i> ${escapeHTML(rec.action)}</div>
+              <div class="rec-action-description"><i class="fa-solid fa-coins"></i> Impact: ${escapeHTML(rec.impact)}</div>
             </div>
           `;
         });

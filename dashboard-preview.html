@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartSpend Dashboard</title>
+  <link rel="icon" type="image/svg+xml" href="http://127.0.0.1:5000/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="http://127.0.0.1:5000/static/css/style.css" />
+  <link rel="stylesheet" href="http://127.0.0.1:5000/static/css/recommendations.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h2 class="dashboard-title">SmartSpend AI Intelligence Dashboard</h2>
+    <div class="topbar-nav">
+      <div class="topbar-primary-actions">
+        <a href="/" class="home-btn" id="homeLink"><i class="fa-solid fa-house"></i> Home</a>
+        <button type="button" class="home-btn snapshot-btn" id="saveSnapshotBtn" aria-haspopup="dialog" aria-controls="snapshotPermissionModal">
+          <i class="fa-solid fa-camera"></i> Save Snapshot
+        </button>
+      </div>
+      <div class="topbar-actions">
+        <button class="theme-toggle" data-theme-toggle aria-label="Toggle theme"><i class="fa-solid fa-circle-half-stroke"></i></button>
+        <div class="profile-wrapper hidden" id="profileWrapper">
+          <button class="profile-btn" id="profileToggle" aria-label="Open profile menu">
+            <img id="avatarPreview" src="http://127.0.0.1:5000/static/images/anonymous-avatar.svg" alt="Profile avatar" />
+          </button>
+          <div class="profile-dropdown hidden" id="profileDropdown">
+            <div class="dropdown-header"><strong id="navName">User</strong></div>
+            <a href="/profile" id="profileLink">Your Profile</a>
+            <a href="#" id="logoutBtn">Sign Out</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="ai-executive-summary reveal-up" id="executiveSummary" style="display:none;">
+    <h3><i class="fa-solid fa-brain"></i> AI Executive Summary</h3>
+    <p id="summaryText"></p>
+  </section>
+
+  <section class="ai-kpi-panel reveal-up" aria-label="Spending summary">
+    <div class="kpi kpi-stat reveal-left visible" id="kpiTotalCard">
+      <div class="kpi-stat-top"><span id="kpiTotalLabel">Total Expenses</span></div>
+      <div class="kpi-stat-value" id="kpiTotal">R 50290.0</div>
+      <p id="kpiTotalDesc" class="kpi-description"></p>
+    </div>
+
+    <div class="kpi kpi-stat reveal-right visible" id="kpiAvgCard">
+      <div class="kpi-stat-top"><span id="kpiAvgLabel">Avg Transaction</span></div>
+      <div class="kpi-stat-value" id="kpiAvg">R 1257.25</div>
+      <p id="kpiAvgDesc" class="kpi-description"></p>
+    </div>
+
+    <div class="kpi kpi-stat reveal-left visible" id="kpiPredictionCard">
+      <div class="kpi-stat-top"><span id="kpiPredictionLabel">Next Month Est.</span></div>
+      <div class="kpi-stat-value" id="kpiPrediction">R 13902.0</div>
+      <p id="kpiPredictionDesc" class="kpi-description"></p>
+    </div>
+
+    <div class="kpi kpi-stat danger reveal-right visible" id="kpiAnomaliesCard">
+      <div class="kpi-stat-top"><span id="kpiAnomaliesLabel">Unusual Spends</span></div>
+      <div class="kpi-stat-value" id="kpiAnomalies">4</div>
+      <p id="kpiAnomaliesDesc" class="kpi-description"></p>
+    </div>
+  </section>
+
+
+  <main class="dashboard">
+    <article class="chart reveal-left" id="trendChart-container"><h4 id="trendTitle">Predictive Spending Trend</h4><p class="chart-note" id="trendNote"></p><canvas id="trendChart"></canvas></article>
+    <article class="chart reveal-right" id="categoryChart-container"><h4 id="categoryTitle">Category Distribution</h4><p class="chart-note" id="categoryNote"></p><canvas id="categoryChart"></canvas></article>
+    <article class="chart reveal-left" id="monthlyChart-container"><h4 id="monthlyTitle">Monthly Comparison</h4><p class="chart-note" id="monthlyNote"></p><canvas id="monthlyChart"></canvas></article>
+    <article class="chart reveal-right" id="scatterChart-container"><h4 id="scatterTitle">Transaction Scatter</h4><p class="chart-note" id="scatterNote"></p><canvas id="scatterChart"></canvas></article>
+    <article class="chart reveal-left" id="cumulativeChart-container"><h4 id="cumulativeTitle">Cumulative Spend Curve</h4><p class="chart-note" id="cumulativeNote"></p><canvas id="cumulativeChart"></canvas></article>
+    <article class="chart reveal-right" id="rollingChart-container"><h4 id="rollingTitle">Rolling Average Signal</h4><p class="chart-note" id="rollingNote"></p><canvas id="rollingChart"></canvas></article>
+    <article class="chart reveal-left" id="velocityChart-container"><h4 id="velocityTitle">Spending Velocity</h4><p class="chart-note" id="velocityNote"></p><canvas id="velocityChart"></canvas></article>
+    <article class="chart reveal-right" id="volatilityChart-container"><h4 id="volatilityTitle">Volatility Radar</h4><p class="chart-note" id="volatilityNote"></p><canvas id="volatilityChart"></canvas></article>
+    <article class="chart reveal-up" id="expenseChart-container"><h4 id="expenseTitle">Fixed vs Variable Split</h4><p class="chart-note" id="expenseNote"></p><canvas id="expenseChart"></canvas></article>
+  </main>
+
+  <section class="ai-recommendations-panel reveal-up" id="aiRecommendationsPanel" style="display:none;">
+    <h3><i class="fa-solid fa-sparkles"></i> AI Recommendations</h3>
+    <div id="recommendationsContent" class="recommendations-content"></div>
+  </section>
+
+  <div class="snapshot-permission-modal hidden" id="snapshotPermissionModal" role="dialog" aria-modal="true" aria-labelledby="snapshotPermissionTitle">
+    <div class="snapshot-permission-card">
+      <h3 id="snapshotPermissionTitle"><i class="fa-solid fa-shield"></i> Snapshot Permissions</h3>
+      <p>SmartSpend will ask your browser for a one-time capture permission. After you choose your current tab/screen, your snapshot downloads immediately and capture stops.</p>
+      <ul>
+        <li>No audio is captured.</li>
+        <li>Only this snapshot action runs, and then permission is released.</li>
+      </ul>
+      <div class="snapshot-permission-actions">
+        <button type="button" class="btn btn-secondary" id="snapshotCancelBtn">Cancel</button>
+        <button type="button" class="btn" id="snapshotContinueBtn">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="app-footer reveal">
+    <div class="footer-row">
+      <span>SmartSpend AI © 2026</span>
+      <span class="footer-icons">
+        <a href="https://github.com/skumalo0115-commits" target="_blank" rel="noopener"><i class="fa-brands fa-github"></i></a>
+        <a href="https://www.linkedin.com/in/sbahle-kumalo-b4b498267" target="_blank" rel="noopener"><i class="fa-brands fa-linkedin"></i></a>
+        <a href="https://www.facebook.com/share/1DL66XnWr5/?mibextid=wwXIfr" target="_blank" rel="noopener"><i class="fa-brands fa-facebook"></i></a>
+        <a href="https://wa.me/27827744933" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
+        <a href="tel:0827744933" aria-label="Call"><i class="fa-solid fa-phone"></i></a>
+      </span>
+    </div>
+  </footer>
+
+  <script>localStorage.setItem("loggedIn", "true"); localStorage.setItem("profile", JSON.stringify({name:"Preview User"}));</script><script>
+    window.__JINJA_MONTHS__ = '["Jan 2025", "Feb 2025", "Mar 2025", "Apr 2025"]';
+    window.__JINJA_MONTHLY__ = '[11763, 12324, 12839, 13364]';
+    window.__JINJA_CATEGORIES__ = '["Housing", "Shopping", "Groceries", "Utilities", "Dining", "Transport", "Subscriptions"]';
+    window.__JINJA_CATEGORY_TOTALS__ = '[38000, 4149, 2850, 1825, 1570, 1340, 556]';
+    window.__JINJA_AMOUNTS__ = '[9500, 420, 180, 250, 129, 300, 220, 95, 499, 170, 9500, 450, 210, 260, 129, 390, 245, 110, 850, 180, 9500, 480, 240, 270, 149, 420, 260, 125, 1200, 195, 9500, 500, 250, 290, 149, 460, 275, 130, 1600, 210]';
+    window.__JINJA_DATES__ = '["2025-01-02", "2025-01-03", "2025-01-05", "2025-01-07", "2025-01-10", "2025-01-12", "2025-01-15", "2025-01-18", "2025-01-20", "2025-01-24", "2025-02-01", "2025-02-03", "2025-02-06", "2025-02-08", "2025-02-09", "2025-02-12", "2025-02-16", "2025-02-18", "2025-02-21", "2025-02-25", "2025-03-01", "2025-03-04", "2025-03-06", "2025-03-09", "2025-03-10", "2025-03-13", "2025-03-17", "2025-03-20", "2025-03-22", "2025-03-27", "2025-04-01", "2025-04-04", "2025-04-07", "2025-04-09", "2025-04-11", "2025-04-14", "2025-04-18", "2025-04-22", "2025-04-25", "2025-04-28"]';
+    window.__JINJA_CUMULATIVE__ = '[9500, 9920, 10100, 10350, 10479, 10779, 10999, 11094, 11593, 11763, 21263, 21713, 21923, 22183, 22312, 22702, 22947, 23057, 23907, 24087, 33587, 34067, 34307, 34577, 34726, 35146, 35406, 35531, 36731, 36926, 46426, 46926, 47176, 47466, 47615, 48075, 48350, 48480, 50080, 50290]';
+    window.__JINJA_ROLLING__ = '[9500.0, 4960.0, 3366.67, 2587.5, 244.75, 214.75, 224.75, 186.0, 278.5, 246.0, 2566.0, 2654.75, 2582.5, 2605.0, 262.25, 247.25, 256.0, 218.5, 398.75, 346.25, 2660.0, 2752.5, 2600.0, 2622.5, 284.75, 269.75, 274.75, 238.5, 501.25, 445.0, 2755.0, 2848.75, 2611.25, 2635.0, 297.25, 287.25, 293.5, 253.5, 616.25, 553.75]';
+    window.__JINJA_VELOCITY__ = '[0.0, -9080.0, -240.0, 70.0, -121.0, 171.0, -80.0, -125.0, 404.0, -329.0, 9330.0, -9050.0, -240.0, 50.0, -131.0, 261.0, -145.0, -135.0, 740.0, -670.0, 9320.0, -9020.0, -240.0, 30.0, -121.0, 271.0, -160.0, -135.0, 1075.0, -1005.0, 9305.0, -9000.0, -250.0, 40.0, -141.0, 311.0, -185.0, -145.0, 1470.0, -1390.0]';
+    window.__JINJA_VOL_LABELS__ = '["Dining", "Groceries", "Housing", "Shopping", "Subscriptions", "Transport", "Utilities"]';
+    window.__JINJA_VOL_VALUES__ = '[68.01, 116.89, 0.0, 471.86, 11.55, 60.71, 45.03]';
+    window.__JINJA_EXPENSE_LABELS__ = '["Fixed", "Variable"]';
+    window.__JINJA_EXPENSE_VALUES__ = '[40381, 9909]';
+    window.__JINJA_AI_ANALYSIS__ = '{"chart_descriptions": {"category": "Housing is the largest category at R38,000.00, about 75.6% of total spend.", "cumulative": "Total spend accumulated to R50,290.00, so savings improvements need to happen early in the month.", "fixed_variable": "Fixed spend is R40,381.00 and variable spend is R9,909.00, so variable spend is the main savings lever.", "monthly": "Use the tallest month as the budget pressure point and compare future uploads against it.", "rolling": "The rolling average smooths noisy transactions so the real spending direction is easier to read.", "scatter": "The transaction spread separates everyday purchases from high-value outliers that need attention.", "trend": "Monthly spend is up by R525.00 (4.1%) compared with the previous month.", "velocity": "Large jumps in velocity show dates where spending pace changed sharply.", "volatility": "Shopping has the most unpredictable spend pattern in this CSV."}, "executive_summary": "SmartSpend read the uploaded CSV and found R50,290.00 in spending, led by Housing. The next-month estimate is R13,902.00, so the clearest way to keep more money available is to reduce flexible spending by about R2,514.50 and review the flagged outliers.", "kpi_descriptions": {"anomalies": "4 transaction(s) sit unusually high and deserve a quick review before budgeting.", "average": "Each transaction averages R1,257.25, which shows how quickly individual purchases add up.", "prediction": "Next month is projected at R13,902.00, trending higher than the latest month.", "total": "You spent R50,290.00 across the uploaded CSV period, so this is the baseline to reduce from."}, "kpi_labels": {"anomalies": "Unusual Spends", "average": "Avg Transaction", "prediction": "Next Month Est.", "total": "Total Expenses"}, "recommendations": [{"action": "Reduce Housing by 10% next month.", "impact": "Estimated improvement: R3,800.00 kept available.", "priority": "HIGH"}, {"action": "Review every unusual transaction before the next budget cycle.", "impact": "Potentially prevents repeat spikes across 4 flagged transaction(s).", "priority": "MEDIUM"}, {"action": "Create an automatic savings transfer of R2,514.50.", "impact": "Turns the CSV insight into money kept before discretionary spending starts.", "priority": "LOW"}], "source": "Local CSV analysis", "spending_insights": [{"finding": "Housing takes the biggest share of the uploaded spending at R38,000.00.", "implication": "Set a cap for Housing first because a small reduction there has the biggest impact.", "title": "Largest Spending Driver"}, {"finding": "A realistic first savings target is about R2,514.50 from flexible expenses.", "implication": "Move that amount to savings at the start of the month, then spend against the remaining budget.", "title": "Savings Opportunity"}]}';
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script defer src="http://127.0.0.1:5000/static/js/app.js"></script>
+  <script defer src="http://127.0.0.1:5000/static/js/dashboard-page.js"></script>
+  <script defer src="http://127.0.0.1:5000/static/js/ai-dashboard.js"></script>
+</body>
+</html>
