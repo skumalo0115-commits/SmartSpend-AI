@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (profileLink) profileLink.href = isStaticMode ? "/templates/profile.html" : "/profile";
 
   const parseInjectedJSON = (value, fallback) => {
-    if (!value || value.includes("\u007b\u007b")) return fallback;
+    if (!value || value.includes("{{" )) return fallback;
     try { return JSON.parse(value); } catch { return fallback; }
   };
 
@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const axis = {
     ticks: { color: "#9fb3ff" },
-  grid: { color: "rgba(159,179,255,0.14)" },
+    grid: { color: "rgba(159,179,255,0.14)" },
   };
 
   const moneyLabel = (value) => `R ${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
@@ -82,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (window.Chart) {
     new Chart(document.getElementById("trendChart"), {
       type: "line",
-      data: { labels: data.months, datasets: [{ label: "Trend", data: data.monthly, borderColor: "#6ea8ff", backgroundColor: "rgba(110,168,255,.2)", fill: true, tension: 0.35, pointRadius: 5, pointHoverRadius: 8, hitRadius: 20, pointBackgroundColor: data.monthly.map(v => v > anomalyThreshold ? "#ff6287" : "#ff6b7d") }] },
+      data: { labels: data.months, datasets: [{ label: "Trend", data: data.monthly, borderColor: "#6ea8ff", backgroundColor: "rgba(110,168,255,.2)", fill: true, tension: 0.35, pointRadius: 5, pointBackgroundColor: "#3158da" }] },
       options,
     });
     new Chart(document.getElementById("categoryChart"), {
@@ -90,20 +90,19 @@ document.addEventListener("DOMContentLoaded", () => {
       data: { labels: data.categories, datasets: [{ data: data.categoryTotals, backgroundColor: ["#3158da", "#17c084", "#f59e0b", "#f43f5e", "#00a5ff", "#d7263d"] }] },
       options: { responsive: true, maintainAspectRatio: false, animation: { duration: 900 } },
     });
-    new Chart(document.getElementById("monthlyBarChart"), { type: "bar", data: { labels: data.months, datasets: [{ label: "Monthly", data: data.monthly, backgroundColor: "#3259dc" }] }, options });
-    new Chart(document.getElementById("scatterChart"), { type: "scatter", data: { datasets: [{ label: "Transactions", data: data.amounts.map((v, i) => ({ x: i + 1, y: v })), pointRadius: 5, pointHoverRadius: 8, hitRadius: 20, backgroundColor: data.amounts.map(v => v > anomalyThreshold ? "#ff6287" : "#4ea2ff") }] }, options });
-    new Chart(document.getElementById("cumulativeChart"), { type: "line", data: { labels: data.dates, datasets: [{ label: "Cumulative", data: data.cumulative, borderColor: "#22c55e" }] }, options });
-    new Chart(document.getElementById("rollingChart"), { type: "line", data: { labels: data.dates, datasets: [{ label: "Rolling", data: data.rolling, borderColor: "#00b7ff", borderDash: [6, 3] }] }, options });
-    new Chart(document.getElementById("velocityChart"), { type: "line", data: { labels: data.dates, datasets: [{ label: "Velocity", data: data.velocity, borderColor: "#f59e0b" }] }, options });
-    new Chart(document.getElementById("volatilityChart"), { type: "radar", data: { labels: data.volLabels, datasets: [{ label: "Volatility", data: data.volValues, borderColor: "#7c3aed", backgroundColor: "rgba(124,58,237,.2)" }] }, options: { responsive: true, maintainAspectRatio: false } });
-    new Chart(document.getElementById("expenseTypeChart"), { type: "doughnut", data: { labels: data.expenseLabels, datasets: [{ data: data.expenseValues, backgroundColor: ["#355adf", "#22c55e"] }] }, options: { responsive: true, maintainAspectRatio: false } });
+    new Chart(document.getElementById("monthlyChart"), { type: "bar", data: { labels: data.months, datasets: [{ label: "Monthly", data: data.monthly, backgroundColor: "#3259dc" }] }, options });
+    new Chart(document.getElementById("scatterChart"), { type: "scatter", data: { datasets: [{ label: "Transactions", data: data.amounts.map((v, i) => ({ x: i + 1, y: v })), pointRadius: 5, pointHoverRadius: 8, pointBackgroundColor: "#00a5ff", pointBorderColor: "#0080ff" }] }, options });
+    new Chart(document.getElementById("cumulativeChart"), { type: "line", data: { labels: data.dates, datasets: [{ label: "Cumulative", data: data.cumulative, borderColor: "#22c55e", backgroundColor: "rgba(34,197,94,.1)", fill: true, tension: 0.2 }] }, options });
+    new Chart(document.getElementById("rollingChart"), { type: "line", data: { labels: data.dates, datasets: [{ label: "Rolling", data: data.rolling, borderColor: "#00b7ff", borderDash: [6, 3], tension: 0.3 }] }, options });
+    new Chart(document.getElementById("velocityChart"), { type: "line", data: { labels: data.dates, datasets: [{ label: "Velocity", data: data.velocity, borderColor: "#f59e0b", fill: false, tension: 0.3 }] }, options });
+    new Chart(document.getElementById("volatilityChart"), { type: "radar", data: { labels: data.volLabels, datasets: [{ label: "Volatility", data: data.volValues, borderColor: "#7c3aed", backgroundColor: "rgba(124,58,237,.15)", pointBackgroundColor: "#7c3aed" }] }, options });
+    new Chart(document.getElementById("expenseChart"), { type: "doughnut", data: { labels: data.expenseLabels, datasets: [{ data: data.expenseValues, backgroundColor: ["#355adf", "#22c55e"] }] }, options: { responsive: true, maintainAspectRatio: false } });
   }
 
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => entry.isIntersecting && entry.target.classList.add("visible"));
   }, { threshold: 0.15 });
   document.querySelectorAll(".kpi,.chart").forEach((el) => observer.observe(el));
-
 
   const dashboard = document.querySelector(".dashboard");
   const backdrop = document.createElement("div");
@@ -184,10 +183,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let stream;
     try {
       stream = await navigator.mediaDevices.getDisplayMedia({
-        video: {
-          frameRate: { ideal: 1, max: 5 },
-          displaySurface: "browser",
-        },
+        video: { frameRate: { ideal: 1, max: 5 }, displaySurface: "browser" },
         audio: false,
       });
 
