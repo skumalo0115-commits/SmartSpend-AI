@@ -55,48 +55,87 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  const axis = {
-    ticks: { color: "#9fb3ff" },
-    grid: { color: "rgba(159,179,255,0.14)" },
-  };
+  const axis = () => ({
+    ticks: {
+      color: "#b9c8ff",
+      maxTicksLimit: 7,
+      autoSkip: true,
+      font: { size: 11, weight: "600" },
+    },
+    grid: { color: "rgba(159,179,255,0.12)" },
+    border: { color: "rgba(159,179,255,0.18)" },
+  });
 
   const moneyLabel = (value) => `R ${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
-
-  const options = {
+  const compactMoney = (value) => `R${Number(value || 0).toLocaleString(undefined, { notation: "compact", maximumFractionDigits: 1 })}`;
+  const axisLabel = function(value) {
+    return this.getLabelForValue ? this.getLabelForValue(value) : value;
+  };
+  const parsedValue = (ctx) => {
+    if (ctx.parsed && typeof ctx.parsed === "object") return ctx.parsed.y ?? ctx.parsed.r ?? 0;
+    return ctx.parsed ?? ctx.raw ?? 0;
+  };
+  const chartOptions = ({ indexAxis = "x", currencyAxis = true } = {}) => ({
     responsive: true,
     maintainAspectRatio: false,
     interaction: { mode: "nearest", axis: "xy", intersect: false },
     plugins: {
-      legend: { labels: { color: "#dbeafe" } },
+      legend: {
+        position: "top",
+        labels: { color: "#dbeafe", boxWidth: 26, boxHeight: 8, useBorderRadius: true },
+      },
       tooltip: {
         enabled: true,
+        backgroundColor: "rgba(7, 13, 35, 0.94)",
+        borderColor: "rgba(125, 158, 255, 0.35)",
+        borderWidth: 1,
         callbacks: {
-          label: (ctx) => `${ctx.dataset.label || "Value"}: ${moneyLabel(ctx.parsed?.y ?? ctx.parsed)}`,
+          label: (ctx) => `${ctx.dataset.label || "Value"}: ${moneyLabel(parsedValue(ctx))}`,
         },
       },
     },
-    scales: { x: axis, y: axis },
-    animation: { duration: 1300 },
+    scales: {
+      x: { ...axis(), ticks: { ...axis().ticks, callback: currencyAxis && indexAxis === "y" ? compactMoney : axisLabel } },
+      y: { ...axis(), ticks: { ...axis().ticks, callback: currencyAxis && indexAxis === "x" ? compactMoney : axisLabel } },
+    },
+    animation: { duration: 900 },
+  });
+
+  const doughnutOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: "62%",
+    plugins: {
+      legend: {
+        position: "bottom",
+        labels: { color: "#dbeafe", padding: 14, boxWidth: 12, boxHeight: 12, useBorderRadius: true },
+      },
+      tooltip: {
+        backgroundColor: "rgba(7, 13, 35, 0.94)",
+        callbacks: { label: (ctx) => `${ctx.label}: ${moneyLabel(ctx.parsed)}` },
+      },
+    },
+    animation: { duration: 800 },
   };
 
   if (window.Chart) {
     new Chart(document.getElementById("trendChart"), {
       type: "line",
       data: { labels: data.months, datasets: [{ label: "Trend", data: data.monthly, borderColor: "#6ea8ff", backgroundColor: "rgba(110,168,255,.2)", fill: true, tension: 0.35, pointRadius: 5, pointBackgroundColor: "#3158da" }] },
-      options,
+      options: chartOptions(),
     });
     new Chart(document.getElementById("categoryChart"), {
       type: "doughnut",
-      data: { labels: data.categories, datasets: [{ data: data.categoryTotals, backgroundColor: ["#3158da", "#17c084", "#f59e0b", "#f43f5e", "#00a5ff", "#d7263d"] }] },
-      options: { responsive: true, maintainAspectRatio: false, animation: { duration: 900 } },
+      data: { labels: data.categories, datasets: [{ data: data.categoryTotals, backgroundColor: ["#3b82f6", "#17c084", "#f59e0b", "#f43f5e", "#06b6d4", "#d946ef"], borderColor: "rgba(255,255,255,.08)", borderWidth: 2 }] },
+      options: doughnutOptions,
     });
-    new Chart(document.getElementById("monthlyChart"), { type: "bar", data: { labels: data.months, datasets: [{ label: "Monthly", data: data.monthly, backgroundColor: "#3259dc" }] }, options });
-    new Chart(document.getElementById("scatterChart"), { type: "scatter", data: { datasets: [{ label: "Transactions", data: data.amounts.map((v, i) => ({ x: i + 1, y: v })), pointRadius: 5, pointHoverRadius: 8, pointBackgroundColor: "#00a5ff", pointBorderColor: "#0080ff" }] }, options });
-    new Chart(document.getElementById("cumulativeChart"), { type: "line", data: { labels: data.dates, datasets: [{ label: "Cumulative", data: data.cumulative, borderColor: "#22c55e", backgroundColor: "rgba(34,197,94,.1)", fill: true, tension: 0.2 }] }, options });
-    new Chart(document.getElementById("rollingChart"), { type: "line", data: { labels: data.dates, datasets: [{ label: "Rolling", data: data.rolling, borderColor: "#00b7ff", borderDash: [6, 3], tension: 0.3 }] }, options });
-    new Chart(document.getElementById("velocityChart"), { type: "line", data: { labels: data.dates, datasets: [{ label: "Velocity", data: data.velocity, borderColor: "#f59e0b", fill: false, tension: 0.3 }] }, options });
-    new Chart(document.getElementById("volatilityChart"), { type: "radar", data: { labels: data.volLabels, datasets: [{ label: "Volatility", data: data.volValues, borderColor: "#7c3aed", backgroundColor: "rgba(124,58,237,.15)", pointBackgroundColor: "#7c3aed" }] }, options });
-    new Chart(document.getElementById("expenseChart"), { type: "doughnut", data: { labels: data.expenseLabels, datasets: [{ data: data.expenseValues, backgroundColor: ["#355adf", "#22c55e"] }] }, options: { responsive: true, maintainAspectRatio: false } });
+    new Chart(document.getElementById("monthlyChart"), { type: "bar", data: { labels: data.months, datasets: [{ label: "Monthly", data: data.monthly, backgroundColor: "rgba(59,130,246,.82)", borderColor: "#93c5fd", borderWidth: 1, borderRadius: 7 }] }, options: chartOptions() });
+    new Chart(document.getElementById("scatterChart"), { type: "scatter", data: { datasets: [{ label: "Transactions", data: data.amounts.map((v, i) => ({ x: i + 1, y: v })), pointRadius: 4, pointHoverRadius: 7, pointBackgroundColor: "#22d3ee", pointBorderColor: "#0ea5e9" }] }, options: chartOptions() });
+    new Chart(document.getElementById("cumulativeChart"), { type: "line", data: { labels: data.dates, datasets: [{ label: "Cumulative", data: data.cumulative, borderColor: "#22c55e", backgroundColor: "rgba(34,197,94,.14)", fill: true, tension: 0.24, pointRadius: 2 }] }, options: chartOptions() });
+    new Chart(document.getElementById("rollingChart"), { type: "line", data: { labels: data.dates, datasets: [{ label: "Rolling", data: data.rolling, borderColor: "#22d3ee", borderDash: [6, 4], tension: 0.32, pointRadius: 2 }] }, options: chartOptions() });
+    new Chart(document.getElementById("velocityChart"), { type: "line", data: { labels: data.dates, datasets: [{ label: "Velocity", data: data.velocity, borderColor: "#f59e0b", backgroundColor: "rgba(245,158,11,.12)", fill: true, tension: 0.3, pointRadius: 2 }] }, options: chartOptions() });
+    new Chart(document.getElementById("volatilityChart"), { type: "bar", data: { labels: data.volLabels, datasets: [{ label: "Volatility", data: data.volValues, backgroundColor: "rgba(217,70,239,.72)", borderColor: "#f0abfc", borderWidth: 1, borderRadius: 7 }] }, options: chartOptions() });
+    new Chart(document.getElementById("expenseChart"), { type: "doughnut", data: { labels: data.expenseLabels, datasets: [{ data: data.expenseValues, backgroundColor: ["#3b82f6", "#22c55e"], borderColor: "rgba(255,255,255,.08)", borderWidth: 2 }] }, options: doughnutOptions });
   }
 
   // KPIs ("money" cards) must be visible immediately; charts use IntersectionObserver reveal.
@@ -105,7 +144,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => entry.isIntersecting && entry.target.classList.add("visible"));
   }, { threshold: 0.15 });
-  document.querySelectorAll(".chart").forEach((el) => observer.observe(el));
+  document.querySelectorAll(".chart").forEach((el) => {
+    el.classList.add("visible");
+    observer.observe(el);
+  });
 
   const dashboard = document.querySelector(".dashboard");
   const backdrop = document.createElement("div");
