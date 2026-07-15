@@ -9,11 +9,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/css/style.css" />
+  <link rel="stylesheet" href="/static/css/recommendations.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 </head>
 <body>
   <header class="topbar">
-    <h2 class="dashboard-title">SmartSpend Trading-Style Insights</h2>
+    <h2 class="dashboard-title">SmartSpend AI Intelligence Dashboard</h2>
     <div class="topbar-nav">
       <div class="topbar-primary-actions">
         <a href="/" class="home-btn" id="homeLink"><i class="fa-solid fa-house"></i> Home</a>
@@ -37,42 +38,39 @@
     </div>
   </header>
 
-  <section class="insights-panel reveal-up">
-    <h3><i class="fa-solid fa-lightbulb"></i> AI Insights</h3>
-    <ul id="insightsList">{% for insight in insights %}<li>{{ insight }}</li>{% endfor %}</ul>
+  <section class="ai-executive-summary reveal-up" id="executiveSummary" style="display:none;">
+    <h3><i class="fa-solid fa-brain"></i> AI Executive Summary</h3>
+    <p id="summaryText"></p>
   </section>
 
-  <section class="ai-recommendations-panel reveal-up" id="aiRecommendationsPanel">
-    <h3><i class="fa-solid fa-sparkles"></i> AI-Powered Spending Recommendations</h3>
-    <div id="recommendationsContent" class="recommendations-content">
-      {{ ai_recommendations }}
-    </div>
+  <section class="ai-kpi-panel reveal-up">
+    <div class="kpi reveal-left" id="kpiTotalCard"><span id="kpiTotalLabel">Total Balance</span><strong id="kpiTotal">R {{ total }}</strong><p id="kpiTotalDesc" class="kpi-description"></p></div>
+    <div class="kpi reveal-right" id="kpiAvgCard"><span id="kpiAvgLabel">Total Profit</span><strong id="kpiAvg">R {{ average }}</strong><p id="kpiAvgDesc" class="kpi-description"></p></div>
+    <div class="kpi reveal-left" id="kpiPredictionCard"><span id="kpiPredictionLabel">Pending Orders</span><strong id="kpiPrediction">R {{ prediction }}</strong><p id="kpiPredictionDesc" class="kpi-description"></p></div>
+    <div class="kpi danger reveal-right" id="kpiAnomaliesCard"><span id="kpiAnomaliesLabel">Active Assets</span><strong id="kpiAnomalies">{{ anomalies }}</strong><p id="kpiAnomaliesDesc" class="kpi-description"></p></div>
   </section>
 
   <main class="dashboard">
-    <div class="kpi reveal-left"><span>Total Balance</span><strong id="kpiTotal">R {{ total }}</strong></div>
-    <div class="kpi reveal-right"><span>Total Profit</span><strong id="kpiAvg">R {{ average }}</strong></div>
-    <div class="kpi reveal-left"><span>Pending Orders</span><strong id="kpiPrediction">R {{ prediction }}</strong></div>
-    <div class="kpi danger reveal-right"><span>Active Assets</span><strong id="kpiAnomalies">{{ anomalies }}</strong></div>
-
-    <article class="chart reveal-left"><h4>Predictive Spending Trend</h4><p class="chart-note">This line shows if your spending is speeding up or calming down over time. If the line rises fast, spending is accelerating.</p><canvas id="trendChart"></canvas></article>
-    <article class="chart reveal-right"><h4>Category Distribution</h4><p class="chart-note">This donut shows where most of your money goes by category. Bigger slices mean that category takes more of your budget.</p><canvas id="categoryChart"></canvas></article>
-    <article class="chart reveal-left"><h4>Monthly Comparison</h4><p class="chart-note">This bar chart compares month-by-month totals so you can spot expensive months and months where spending improved.</p><canvas id="monthlyChart"></canvas></article>
-    <article class="chart reveal-right"><h4>Transaction Scatter</h4><p class="chart-note">Each dot is one transaction. Dots far away from the cluster are unusual spends that may need a quick check.</p><canvas id="scatterChart"></canvas></article>
-    <article class="chart reveal-left"><h4>Cumulative Spend Curve</h4><p class="chart-note">This chart adds spending over time so you can see how fast your total costs are building up. <span class="hint-text">Steeper = faster spending</span></p><canvas id="cumulativeChart"></canvas></article>
-    <article class="chart reveal-right"><h4>Rolling Average Signal</h4><p class="chart-note">This smooth line removes short-term noise so you can see the real spending direction more clearly. <span class="hint-text">Upward trend = more spending</span></p><canvas id="rollingChart"></canvas></article>
-    <article class="chart reveal-left"><h4>Spending Velocity</h4><p class="chart-note">This shows how much spending changed from one point to the next, making sudden jumps easy to notice. <span class="hint-text">Green = less spending, Red = more spending</span></p><canvas id="velocityChart"></canvas></article>
-    <article class="chart reveal-right"><h4>Volatility Radar</h4><p class="chart-note">This radar highlights categories with unstable spending. Bigger spikes mean that category changes a lot and is harder to predict.</p><canvas id="volatilityChart"></canvas></article>
-    <article class="chart reveal-up"><h4>Fixed vs Variable Split</h4><p class="chart-note">This split compares fixed costs (like bills) vs flexible costs (like optional spending) so you can see how much flexibility you have.</p><canvas id="expenseChart"></canvas></article>
+    <article class="chart reveal-left" id="trendChart-container"><h4 id="trendTitle">Predictive Spending Trend</h4><p class="chart-note" id="trendNote"></p><canvas id="trendChart"></canvas></article>
+    <article class="chart reveal-right" id="categoryChart-container"><h4 id="categoryTitle">Category Distribution</h4><p class="chart-note" id="categoryNote"></p><canvas id="categoryChart"></canvas></article>
+    <article class="chart reveal-left" id="monthlyChart-container"><h4 id="monthlyTitle">Monthly Comparison</h4><p class="chart-note" id="monthlyNote"></p><canvas id="monthlyChart"></canvas></article>
+    <article class="chart reveal-right" id="scatterChart-container"><h4 id="scatterTitle">Transaction Scatter</h4><p class="chart-note" id="scatterNote"></p><canvas id="scatterChart"></canvas></article>
+    <article class="chart reveal-left" id="cumulativeChart-container"><h4 id="cumulativeTitle">Cumulative Spend Curve</h4><p class="chart-note" id="cumulativeNote"></p><canvas id="cumulativeChart"></canvas></article>
+    <article class="chart reveal-right" id="rollingChart-container"><h4 id="rollingTitle">Rolling Average Signal</h4><p class="chart-note" id="rollingNote"></p><canvas id="rollingChart"></canvas></article>
+    <article class="chart reveal-left" id="velocityChart-container"><h4 id="velocityTitle">Spending Velocity</h4><p class="chart-note" id="velocityNote"></p><canvas id="velocityChart"></canvas></article>
+    <article class="chart reveal-right" id="volatilityChart-container"><h4 id="volatilityTitle">Volatility Radar</h4><p class="chart-note" id="volatilityNote"></p><canvas id="volatilityChart"></canvas></article>
+    <article class="chart reveal-up" id="expenseChart-container"><h4 id="expenseTitle">Fixed vs Variable Split</h4><p class="chart-note" id="expenseNote"></p><canvas id="expenseChart"></canvas></article>
   </main>
+
+  <section class="ai-recommendations-panel reveal-up" id="aiRecommendationsPanel" style="display:none;">
+    <h3><i class="fa-solid fa-sparkles"></i> AI Recommendations</h3>
+    <div id="recommendationsContent" class="recommendations-content"></div>
+  </section>
 
   <div class="snapshot-permission-modal hidden" id="snapshotPermissionModal" role="dialog" aria-modal="true" aria-labelledby="snapshotPermissionTitle">
     <div class="snapshot-permission-card">
       <h3 id="snapshotPermissionTitle"><i class="fa-solid fa-shield"></i> Snapshot Permissions</h3>
-      <p>
-        SmartSpend will ask your browser for a one-time capture permission. After you choose your current tab/screen,
-        your snapshot downloads immediately and capture stops.
-      </p>
+      <p>SmartSpend will ask your browser for a one-time capture permission. After you choose your current tab/screen, your snapshot downloads immediately and capture stops.</p>
       <ul>
         <li>No audio is captured.</li>
         <li>Only this snapshot action runs, and then permission is released.</li>
@@ -83,7 +81,6 @@
       </div>
     </div>
   </div>
-
 
   <footer class="app-footer reveal">
     <div class="footer-row">
@@ -112,11 +109,11 @@
     window.__JINJA_VOL_VALUES__ = '{{ volatility_values | tojson }}';
     window.__JINJA_EXPENSE_LABELS__ = '{{ expense_labels | tojson }}';
     window.__JINJA_EXPENSE_VALUES__ = '{{ expense_values | tojson }}';
-    window.__JINJA_INSIGHTS__ = '{{ insights | tojson }}';
-    window.__JINJA_AI_RECOMMENDATIONS__ = '{{ ai_recommendations | tojson }}';
+    window.__JINJA_AI_ANALYSIS__ = '{{ ai_analysis | tojson }}';
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script defer src="/static/js/app.js"></script>
   <script defer src="/static/js/dashboard-page.js"></script>
+  <script defer src="/static/js/ai-dashboard.js"></script>
 </body>
 </html>

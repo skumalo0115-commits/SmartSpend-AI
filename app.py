@@ -100,85 +100,92 @@ def compute_analytics(df, date_col, amount_col, category_col):
 
     return {"total": total, "average": average, "prediction": prediction, "anomalies": anomalies, "strongest_category": strongest_category, "insights": insight_items, "months": months, "monthly": monthly_values, "categories": category_totals.index.tolist(), "category_totals": category_totals.round(2).tolist(), "dates": df[date_col].dt.strftime("%Y-%m-%d").tolist(), "cumulative": df["cumulative"].round(2).tolist(), "rolling": df["rolling_avg"].round(2).tolist(), "velocity": df["velocity"].round(2).tolist(), "volatility_labels": volatility.index.tolist(), "volatility_values": volatility.round(2).tolist(), "expense_labels": expense_split.index.tolist(), "expense_values": expense_split.round(2).tolist(), "amounts": df[amount_col].round(2).tolist()}
 
-def get_ai_recommendations(analytics):
+def get_ai_dashboard_analysis(analytics):
     if not OPENROUTER_API_KEY:
-        return json.dumps({"error": "API Not Configured", "message": "Please configure OPENROUTER_API_KEY."})
+        return {"error": "API not configured"}
 
     try:
         category_data = dict(zip(analytics['categories'], analytics['category_totals']))
         monthly_values = analytics['monthly']
-        trend_insight = "Your spending is stable"
         
+        trend_direction = "stable"
         if len(monthly_values) > 2:
             prev_month = monthly_values[-2]
             curr_month = monthly_values[-1]
             if prev_month > 0:
-                trend_percentage = ((curr_month - prev_month) / prev_month) * 100
-                if trend_percentage > 10:
-                    trend_insight = f"Spending INCREASING by {abs(trend_percentage):.1f}%"
-                elif trend_percentage < -10:
-                    trend_insight = f"Spending DECREASING by {abs(trend_percentage):.1f}%"
+                trend_pct = ((curr_month - prev_month) / prev_month) * 100
+                trend_direction = "increasing" if trend_pct > 10 else ("decreasing" if trend_pct < -10 else "stable")
 
         volatility_data = dict(zip(analytics['volatility_labels'], analytics['volatility_values']))
         avg_volatility = np.mean(analytics['volatility_values']) if analytics['volatility_values'] else 0
-        high_volatility_categories = [cat for cat, vol in volatility_data.items() if vol > avg_volatility * 1.5]
+        high_vol = [cat for cat, vol in volatility_data.items() if vol > avg_volatility * 1.5]
 
-        fixed_amount = analytics['expense_values'][0] if analytics['expense_values'] else 0
-        variable_amount = analytics['expense_values'][1] if len(analytics['expense_values']) > 1 else 0
+        fixed_amt = analytics['expense_values'][0] if analytics['expense_values'] else 0
+        variable_amt = analytics['expense_values'][1] if len(analytics['expense_values']) > 1 else 0
         total = analytics['total']
-        fixed_percentage = (fixed_amount / total * 100) if total > 0 else 0
-        variable_percentage = (variable_amount / total * 100) if total > 0 else 0
+        fixed_pct = (fixed_amt / total * 100) if total > 0 else 0
+        variable_pct = (variable_amt / total * 100) if total > 0 else 0
 
-        category_list = ', '.join([f"{cat}: R{tot}" for cat, tot in category_data.items()])
-        volatile_list = ', '.join(high_volatility_categories) if high_volatility_categories else 'None'
-        monthly_list = ' -> '.join([f"R{v}" for v in monthly_values[-4:]])
+        category_str = ', '.join([f"{cat}: R{tot:.0f}" for cat, tot in category_data.items()])
+        volatile_str = ', '.join(high_vol) if high_vol else 'All categories stable'
+        monthly_str = ' -> '.join([f"R{v:.0f}" for v in monthly_values[-4:]])
 
-        prompt = f"""Analyze this spending data and provide structured recommendations as valid JSON only.
+        prompt = f"""Generate comprehensive AI dashboard analysis for spending data. Return ONLY valid JSON, no additional text.
 
-TOTAL: R{total} | AVG: R{analytics['average']} | FORECAST: R{analytics['prediction']} | ANOMALIES: {analytics['anomalies']}
+DATA SUMMARY:
+- Total Spent: R{total}
+- Average Transaction: R{analytics['average']}
+- Monthly Forecast: R{analytics['prediction']}
+- Anomalies: {analytics['anomalies']}
+- Trend: {trend_direction}
+- Categories: {category_str}
+- Fixed vs Variable: {fixed_pct:.0f}% fixed, {variable_pct:.0f}% variable
 
-CATEGORIES: {category_list}
-TREND: {trend_insight}
-MONTHLY: {monthly_list}
-VOLATILE: {volatile_list}
-FIXED: R{fixed_amount} ({fixed_percentage:.0f}%) | VARIABLE: R{variable_amount} ({variable_percentage:.0f}%)
-
-RETURN ONLY THIS JSON:
+RETURN THIS EXACT JSON STRUCTURE:
 {{
-  "executive_summary": "One sentence health assessment",
-  "trend_status": "GOOD/WARNING/CRITICAL",
+  "kpi_descriptions": {{
+    "total": "One sentence explaining what this total means for their finances",
+    "average": "What this average tells about their spending patterns",
+    "prediction": "What next month forecast indicates",
+    "anomalies": "Meaning of these unusual transactions"
+  }},
+  "chart_descriptions": {{
+    "trend": "Specific insight about their trend pattern - is it accelerating, stable, or decelerating?",
+    "category": "Which category dominates and what this means",
+    "monthly": "Month-to-month comparison insight",
+    "scatter": "What their transaction distribution reveals",
+    "cumulative": "Cumulative impact on their finances",
+    "rolling": "Smoothed trend interpretation",
+    "velocity": "How spending pace is changing",
+    "volatility": "Which categories are unpredictable",
+    "fixed_variable": "Budget flexibility assessment"
+  }},
+  "kpi_labels": {{
+    "total": "Total Expenses",
+    "average": "Avg Transaction",
+    "prediction": "Next Month Est.",
+    "anomalies": "Unusual Spends"
+  }},
   "spending_insights": [
     {{
-      "title": "Monthly Trend",
-      "finding": "What the trend shows about their spending pattern",
-      "implication": "Financial meaning of this trend"
+      "title": "Spending Pattern",
+      "finding": "Specific observation about their spending",
+      "implication": "What this means going forward"
     }},
     {{
-      "title": "Budget Allocation",
-      "finding": "How their fixed vs variable split looks",
-      "implication": "What this split means for flexibility"
+      "title": "Budget Health",
+      "finding": "Overall assessment",
+      "implication": "Action to consider"
     }}
   ],
-  "action_items": [
+  "recommendations": [
     {{
       "priority": "HIGH",
-      "category": "{analytics['strongest_category']}",
-      "current": "R{category_data.get(analytics['strongest_category'], 0)}",
-      "recommendation": "Specific action to reduce this expense",
-      "potential_savings": "R500-1000"
+      "action": "Specific action based on their data",
+      "impact": "Expected financial impact"
     }}
   ],
-  "risk_assessment": {{
-    "level": "MEDIUM",
-    "top_concerns": ["High fixed costs", "Few savings"],
-    "mitigation_strategy": "Create emergency fund and reduce discretionary spending"
-  }},
-  "budget_optimization": {{
-    "recommended_fixed_percentage": "50-60%",
-    "recommended_variable_percentage": "40-50%",
-    "monthly_savings_goal": "R2000-3000",
-    "rationale": "Balanced approach allows flexibility while maintaining savings"
-  }}
+  "executive_summary": "2-3 sentences summarizing their complete financial picture"
 }}"""
 
         headers = {
@@ -192,7 +199,7 @@ RETURN ONLY THIS JSON:
             "model": OPENROUTER_MODEL,
             "messages": [{"role": "user", "content": prompt}],
             "temperature": 0.7,
-            "max_tokens": 2000,
+            "max_tokens": 3000,
         }
 
         response = requests.post(OPENROUTER_API_URL, json=payload, headers=headers, timeout=30)
@@ -202,18 +209,18 @@ RETURN ONLY THIS JSON:
             if "choices" in data and len(data["choices"]) > 0:
                 content = data["choices"][0]["message"]["content"]
                 try:
-                    recommendations = json.loads(content)
-                    return json.dumps(recommendations)
+                    analysis = json.loads(content)
+                    return analysis
                 except json.JSONDecodeError:
-                    return json.dumps({"error": "Response Format Error", "message": "Could not parse AI response"})
-            return json.dumps({"error": "Empty Response", "message": "AI service returned no recommendations"})
+                    return {"error": "Invalid JSON response"}
+            return {"error": "No response from AI"}
         else:
-            return json.dumps({"error": f"API Error {response.status_code}", "message": "Check your API key"})
+            return {"error": f"API error {response.status_code}"}
 
     except requests.exceptions.Timeout:
-        return json.dumps({"error": "Service Timeout", "message": "AI service is taking too long."})
+        return {"error": "Request timeout"}
     except Exception as e:
-        return json.dumps({"error": "System Error", "message": str(e)})
+        return {"error": str(e)}
 
 @app.get("/")
 def index():
@@ -271,13 +278,6 @@ def save_analysis():
     conn.close()
     return ok({"status": "analysis_saved"}, 201)
 
-@app.post("/api/recommendations")
-def get_recommendations():
-    data = request.get_json(silent=True) or {}
-    analytics = {"total": float(data.get("total", 0)), "average": float(data.get("average", 0)), "prediction": float(data.get("prediction", 0)), "anomalies": int(data.get("anomalies", 0)), "strongest_category": str(data.get("strongest_category", "General")), "categories": data.get("categories", []), "category_totals": data.get("category_totals", []), "expense_values": data.get("expense_values", []), "monthly": data.get("monthly", []), "volatility_labels": data.get("volatility_labels", []), "volatility_values": data.get("volatility_values", []), "amounts": data.get("amounts", [])}
-    recommendations = get_ai_recommendations(analytics)
-    return ok({"recommendations": recommendations})
-
 @app.post("/upload")
 def upload():
     file = request.files.get("file")
@@ -300,8 +300,10 @@ def upload():
         analytics = compute_analytics(df, date_col, amount_col, category_col)
     except ValueError as exc:
         return err(str(exc))
-    ai_recommendations = get_ai_recommendations(analytics)
-    analytics["ai_recommendations"] = ai_recommendations
+    
+    ai_analysis = get_ai_dashboard_analysis(analytics)
+    analytics["ai_analysis"] = ai_analysis
+    
     return render_template("dashboard.html", **analytics)
 
 @app.errorhandler(413)
