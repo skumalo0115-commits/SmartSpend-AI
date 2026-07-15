@@ -43,12 +43,32 @@
     <p id="summaryText"></p>
   </section>
 
-  <section class="ai-kpi-panel reveal-up">
-    <div class="kpi reveal-left" id="kpiTotalCard"><span id="kpiTotalLabel">Total Balance</span><strong id="kpiTotal">R {{ total }}</strong><p id="kpiTotalDesc" class="kpi-description"></p></div>
-    <div class="kpi reveal-right" id="kpiAvgCard"><span id="kpiAvgLabel">Total Profit</span><strong id="kpiAvg">R {{ average }}</strong><p id="kpiAvgDesc" class="kpi-description"></p></div>
-    <div class="kpi reveal-left" id="kpiPredictionCard"><span id="kpiPredictionLabel">Pending Orders</span><strong id="kpiPrediction">R {{ prediction }}</strong><p id="kpiPredictionDesc" class="kpi-description"></p></div>
-    <div class="kpi danger reveal-right" id="kpiAnomaliesCard"><span id="kpiAnomaliesLabel">Active Assets</span><strong id="kpiAnomalies">{{ anomalies }}</strong><p id="kpiAnomaliesDesc" class="kpi-description"></p></div>
+  <section class="ai-kpi-panel reveal-up" aria-label="Spending summary">
+    <div class="kpi kpi-stat reveal-left" id="kpiTotalCard">
+      <div class="kpi-stat-top"><span id="kpiTotalLabel">Total Expenses</span></div>
+      <div class="kpi-stat-value" id="kpiTotal">R {{ total }}</div>
+      <p id="kpiTotalDesc" class="kpi-description"></p>
+    </div>
+
+    <div class="kpi kpi-stat reveal-right" id="kpiAvgCard">
+      <div class="kpi-stat-top"><span id="kpiAvgLabel">Avg Transaction</span></div>
+      <div class="kpi-stat-value" id="kpiAvg">R {{ average }}</div>
+      <p id="kpiAvgDesc" class="kpi-description"></p>
+    </div>
+
+    <div class="kpi kpi-stat reveal-left" id="kpiPredictionCard">
+      <div class="kpi-stat-top"><span id="kpiPredictionLabel">Next Month Est.</span></div>
+      <div class="kpi-stat-value" id="kpiPrediction">R {{ prediction }}</div>
+      <p id="kpiPredictionDesc" class="kpi-description"></p>
+    </div>
+
+    <div class="kpi kpi-stat danger reveal-right" id="kpiAnomaliesCard">
+      <div class="kpi-stat-top"><span id="kpiAnomaliesLabel">Unusual Spends</span></div>
+      <div class="kpi-stat-value" id="kpiAnomalies">{{ anomalies }}</div>
+      <p id="kpiAnomaliesDesc" class="kpi-description"></p>
+    </div>
   </section>
+
 
   <main class="dashboard">
     <article class="chart reveal-left" id="trendChart-container"><h4 id="trendTitle">Predictive Spending Trend</h4><p class="chart-note" id="trendNote"></p><canvas id="trendChart"></canvas></article>

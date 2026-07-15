@@ -487,6 +487,22 @@ body {
 .kpi strong { display: block; margin-top: 4px; font-size: clamp(1.2rem, 2.3vw, 1.7rem); }
 .kpi.danger { border-color: color-mix(in oklab, var(--danger), var(--border)); }
 
+/* KPI stat layout (fix card structure) */
+.ai-kpi-panel { margin-top: 14px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.kpi.kpi-stat { padding: 18px 18px 16px; height: 100%; display: grid; grid-template-rows: auto 1fr auto; gap: 8px; cursor: default; }
+.kpi.kpi-stat-top { }
+.kpi-stat-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.kpi-stat-value { display: block; font-size: clamp(1.35rem, 2.4vw, 1.9rem); font-weight: 900; letter-spacing: 0.01em; }
+.kpi-description { margin: 0; color: var(--muted); line-height: 1.5; font-size: .93rem; }
+@media (max-width: 1120px) {
+  .ai-kpi-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .ai-kpi-panel { grid-template-columns: 1fr; gap: 12px; }
+  .kpi { grid-column: span 12; }
+}
+
+
 .chart {
   grid-column: span 6;
   min-height: 330px;
